@@ -1,27 +1,45 @@
 # 🚗 Speedometer App
 
-A GPS-based speedometer and drag racing timer for Android.
+A GPS-based speedometer and drag racing timer for Android with real-time tracking and performance analysis.
 
 ## Features
 
 ### 📊 GPS Speedometer (Screen 1)
-- Real-time speed display in km/h with mph reference
+- **Real-time speed display** in km/h with zero-padded digital format (000)
 - **Smooth animated speed transitions** (60fps interpolation)
-- Maximum speed tracking with **3-second long-press reset**
-- GPS status indicator with accuracy display
+- **Trip tracking features**:
+  - Average speed calculation (distance/time)
+  - Total trip distance measurement
+  - 3-second long-press to reset trip data
+- **GPS monitoring**:
+  - Accuracy display (±X.X meters)
+  - Signal strength indicator (Excellent/Good/Fair/Poor)
+- **Maximum speed tracking** with 3-second long-press reset
+- **Info dialog** (ℹ️ button) - Explains GPS accuracy, delays, and usage tips
 - **Portrait-only mode** for driving safety
 - **Screen stays awake** during use
-- Responsive design for all screen sizes
+- Responsive design with digital7 font for speedometer aesthetic
 
 ### 🏁 Drag Racing Mode (Screen 2)
+- **High-precision GPS** (100ms updates, 10x faster than speedometer)
 - **Auto-start timer** from 0 km/h (no manual button needed)
-- Performance measurements:
+- **Performance measurements**:
   - **0-60 km/h** time
   - **0-100 km/h** time
   - **Custom speed target** (default: 80 km/h, configurable)
   - **Custom distance** (default: 400m, configurable)
+- **Precision tracking**:
+  - Speed: 1 decimal place (0.0 km/h)
+  - Time: 2 decimal places (0.00 seconds)
+  - Distance: 2 decimal places (0.00 meters)
 - **Best time tracking** with ⭐ indicator (persistent across sessions)
 - Current time vs. best time comparison
+- **Color-coded status**:
+  - 🔴 Red: Error (GPS disabled/permission denied)
+  - 🟠 Orange: Searching for GPS signal
+  - 🟡 Yellow: Ready to start
+  - 🟢 Green: Timer running
+- **Info dialog** (ℹ️ button) - Racing mode tips and safety warnings
 - Configurable targets via settings dialog
 - **3-second long-press reset** to prevent accidental resets
 - Distance tracking with real-time display
@@ -29,7 +47,8 @@ A GPS-based speedometer and drag racing timer for Android.
 
 ## Screenshots
 
-<!-- Add screenshots here when available -->
+![Screenshot of screen 1.](ss/ss1.png)
+![Screenshot of screen 2.](ss/ss2.png)
 
 ## Requirements
 
@@ -60,20 +79,29 @@ cd gps-based-speedometer
 
 ### GPS Speedometer Mode
 1. **Launch the app** - Grant location permissions when prompted
-2. Wait for GPS signal (go outside for best results)
-3. View your current speed with smooth animations
-4. **Reset max speed** - Hold the max speed text for 3 seconds
-5. **Switch modes** - Tap the "→ DRAG MODE" button
+2. Wait for GPS signal (go outside for best results - may take 30-60s)
+3. View your current speed with smooth animations (zero-padded format: 000)
+4. **Monitor GPS quality** - Check accuracy and signal strength below speed
+5. **Track your trip** - Average speed and distance update automatically
+6. **Reset max speed** - Hold the max speed text for 3 seconds
+7. **Reset trip data** - Hold average speed or distance for 3 seconds
+8. **Learn more** - Tap ℹ️ button for GPS info and tips
+9. **Switch modes** - Tap the "→" button for drag racing mode
 
 ### Drag Racing Mode
-1. Tap "→ DRAG MODE" from the speedometer screen
-2. **Come to complete stop** (0 km/h) - timer is ready
-3. **Accelerate** - Timer starts automatically when you move
-4. Watch your times populate as you hit each milestone
-5. **View best times** - Your personal records show with ⭐ symbol
-6. **Customize targets** - Tap "SETTINGS" to change speed/distance goals
-7. **Reset for next run** - Hold "RESET" button for 3 seconds
-8. **Go back** - Tap "← SPEEDOMETER" button to return
+1. Tap "→" button from the speedometer screen
+2. **Check status color**:
+   - Yellow = Ready to start
+   - Green = Timer running
+   - Red/Orange = GPS issue
+3. **Come to complete stop** (0 km/h) - timer is ready (Yellow status)
+4. **Accelerate** - Timer starts automatically when speed > 1 km/h (Green status)
+5. Watch your times populate as you hit each milestone
+6. **View best times** - Your personal records show with ⭐ symbol
+7. **Customize targets** - Tap "SETTINGS" to change speed/distance goals
+8. **Learn more** - Tap ℹ️ button for racing tips and safety info
+9. **Reset for next run** - Hold "RESET" button for 3 seconds
+10. **Go back** - Tap "←" button to return to speedometer
 
 ## Permissions
 
@@ -86,9 +114,11 @@ cd gps-based-speedometer
 - **Language**: Kotlin
 - **Min SDK**: 28 (Android 9.0)
 - **Target SDK**: 36
+- **Version**: 1.4 (versionCode 4)
 - **Architecture**: Single Activity per screen
-- **Location**: Android LocationManager API
-- **UI**: Material Design 3
+- **Location**: Android LocationManager API (1s updates for speedometer, 100ms for drag mode)
+- **UI**: Material Design 3 with digital7 custom font
+- **Storage**: SharedPreferences for settings and best times
 
 ## Development
 
@@ -112,12 +142,23 @@ app/
 ### Key Features Implementation
 - **Smooth Speed Animation**: 60fps interpolation using Handler with 16ms delay and 0.3 factor
 - **Auto-start Timer**: Detects movement from 0 km/h (>1 km/h threshold)
+- **Trip Tracking**: 
+  - Distance accumulation with GPS drift filtering (>1 km/h, <100m jumps)
+  - Average speed calculation: totalDistance / totalTime
+  - Real-time updates with 1-second intervals
+- **GPS Monitoring**:
+  - Accuracy from Location.hasAccuracy() and Location.getAccuracy()
+  - Signal quality estimation based on accuracy thresholds
+  - Satellite count detection from location extras
 - **Distance Tracking**: Uses Location.distanceTo() for accurate measurements
 - **Persistent Settings**: SharedPreferences for custom targets and best times
 - **Long Press Reset**: 3-second hold with visual feedback and haptic response
 - **Best Time Management**: Automatically saves and compares personal records
+- **Dynamic Status Colors**: Color.parseColor() for real-time status indication
+- **Info Dialogs**: AlertDialog with comprehensive usage instructions and disclaimers
 - **Screen Wake Lock**: Keeps display on using keepScreenOn attribute
-- **Responsive UI**: Auto-sizing text and ScrollView for various screen sizes
+- **Digital Font**: Custom digital7.ttf for authentic speedometer look
+- **Responsive UI**: Fixed headers with organized panel layout
 
 ## License
 
