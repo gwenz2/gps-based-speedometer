@@ -15,17 +15,27 @@ import kotlin.math.abs
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import kotlin.math.abs
+import android.app.AlertDialog
 
 class MainActivity : Activity() {
 
     private lateinit var locationManager: LocationManager
     
     private lateinit var gpsSpeedText: TextView
-    private lateinit var gpsStatusText: TextView
     private lateinit var maxSpeedText: TextView
+    private lateinit var gpsAccuracyText: TextView
+    private lateinit var gpsSignalText: TextView
+    private lateinit var avgSpeedText: TextView
+    private lateinit var tripDistanceText: TextView
     
     private var maxSpeed = 0.0f
     private val LOCATION_PERMISSION_REQUEST = 1
+    
+    // Trip tracking variables
+    private var totalDistance = 0.0 // in meters
+    private var totalTime = 0L // in milliseconds
+    private var lastLocation: Location? = null
+    private var tripStartTime = 0L
     
     // For smooth speed animation
     private var currentDisplaySpeed = 0f
@@ -36,11 +46,11 @@ class MainActivity : Activity() {
             if (abs(currentDisplaySpeed - targetSpeed) > 0.1f) {
                 // Smooth interpolation
                 currentDisplaySpeed += (targetSpeed - currentDisplaySpeed) * 0.3f
-                gpsSpeedText.text = "%.1f".format(currentDisplaySpeed)
+                gpsSpeedText.text = "%03.0f".format(currentDisplaySpeed)
                 speedUpdateHandler.postDelayed(this, 16) // ~60fps
             } else {
                 currentDisplaySpeed = targetSpeed
-                gpsSpeedText.text = "%.1f".format(currentDisplaySpeed)
+                gpsSpeedText.text = "%03.0f".format(currentDisplaySpeed)
             }
         }
     }
@@ -50,10 +60,16 @@ class MainActivity : Activity() {
         setContentView(R.layout.activity_main)
 
         gpsSpeedText = findViewById(R.id.gps_speed_text)
-        gpsStatusText = findViewById(R.id.gps_status_text)
         maxSpeedText = findViewById(R.id.max_speed_text)
+        gpsAccuracyText = findViewById(R.id.gps_accuracy_text)
+        gpsSignalText = findViewById(R.id.gps_signal_text)
+        avgSpeedText = findViewById(R.id.avg_speed_text)
+        tripDistanceText = findViewById(R.id.trip_distance_text)
 
         locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        
+        // Initialize trip start time
+        tripStartTime = System.currentTimeMillis()
 
         // Button to go to drag mode
         val gotoDragModeButton = findViewById<android.widget.Button>(R.id.goto_drag_mode_button)
@@ -73,7 +89,7 @@ class MainActivity : Activity() {
                     resetHandler = android.os.Handler(android.os.Looper.getMainLooper())
                     resetRunnable = Runnable {
                         maxSpeed = 0.0f
-                        maxSpeedText.text = "Max: 0.0 km/h"
+                        maxSpeedText.text = "MAX SPEED: 0 KM/H"
                         Toast.makeText(this, "Max speed reset", Toast.LENGTH_SHORT).show()
                         view.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS)
                     }
@@ -88,6 +104,46 @@ class MainActivity : Activity() {
                 else -> false
             }
         }
+        
+        // Make trip stats long-pressable to reset trip
+        var tripResetHandler: android.os.Handler? = null
+        var tripResetRunnable: Runnable? = null
+        
+        val tripResetListener = android.view.View.OnTouchListener { view, event ->
+            when (event.action) {
+                android.view.MotionEvent.ACTION_DOWN -> {
+                    tripResetHandler = android.os.Handler(android.os.Looper.getMainLooper())
+                    tripResetRunnable = Runnable {
+                        // Reset trip data
+                        totalDistance = 0.0
+                        totalTime = 0L
+                        lastLocation = null
+                        tripStartTime = System.currentTimeMillis()
+                        avgSpeedText.text = "AVG SPEED: 0 KM/H"
+                        tripDistanceText.text = "DISTANCE: 0.0 KM"
+                        Toast.makeText(this, "Trip data reset", Toast.LENGTH_SHORT).show()
+                        view.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS)
+                    }
+                    tripResetHandler?.postDelayed(tripResetRunnable!!, 3000)
+                    Toast.makeText(this, "Hold to reset trip...", Toast.LENGTH_SHORT).show()
+                    true
+                }
+                android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL -> {
+                    tripResetHandler?.removeCallbacks(tripResetRunnable!!)
+                    true
+                }
+                else -> false
+            }
+        }
+        
+        avgSpeedText.setOnTouchListener(tripResetListener)
+        tripDistanceText.setOnTouchListener(tripResetListener)
+
+        // GPS Info button
+        val gpsInfoButton = findViewById<TextView>(R.id.gps_info_button)
+        gpsInfoButton.setOnClickListener {
+            showGPSInfoDialog()
+        }
 
         // Request location permissions
         if (checkLocationPermission()) {
@@ -95,6 +151,47 @@ class MainActivity : Activity() {
         } else {
             requestLocationPermission()
         }
+    }
+
+    private fun showGPSInfoDialog() {
+        val message = """
+            📡 GPS SPEEDOMETER INFO
+            
+            🎯 ACCURACY:
+            • Uses real GPS satellite data
+            • Accuracy: typically ±5-10 meters
+            • Best accuracy outdoors with clear sky
+            
+            ⏱️ UPDATE RATE:
+            • Speed updates every 1 second
+            • Smooth animation for visual comfort
+            • May show slight delay (normal behavior)
+            
+            📊 FEATURES:
+            • Real-time speed tracking
+            • Maximum speed recording
+            • Average speed calculation
+            • Trip distance measurement
+            • GPS accuracy & signal monitoring
+            
+            💡 TIPS:
+            • Wait for GPS lock (may take 30-60s)
+            • Works best in open areas
+            • Speed shown may lag 1-2 seconds (GPS limitation)
+            • Long-press stats to reset
+            
+            ⚠️ DISCLAIMER:
+            This app is for informational purposes only. 
+            Always follow traffic laws and drive safely.
+            
+            Version 1.3 • Made by gwenz
+        """.trimIndent()
+        
+        AlertDialog.Builder(this)
+            .setTitle("ℹ️ About GPS Speedometer")
+            .setMessage(message)
+            .setPositiveButton("Got it!", null)
+            .show()
     }
 
     private fun checkLocationPermission(): Boolean {
@@ -124,10 +221,9 @@ class MainActivity : Activity() {
                     0f,   // 0 meters
                     locationListener
                 )
-                gpsStatusText.text = "GPS: Searching for signal..."
+                // GPS status will be shown via gpsSignalText
             }
         } catch (e: SecurityException) {
-            gpsStatusText.text = "GPS: Permission denied"
             Toast.makeText(this, "Location permission required", Toast.LENGTH_LONG).show()
         }
     }
@@ -143,21 +239,66 @@ class MainActivity : Activity() {
             speedUpdateHandler.removeCallbacks(speedAnimationRunnable)
             speedUpdateHandler.post(speedAnimationRunnable)
             
-            gpsStatusText.text = "GPS: Active (%.1f mph)".format(speedMph)
+            // Update GPS accuracy
+            if (location.hasAccuracy()) {
+                val accuracy = location.accuracy
+                gpsAccuracyText.text = "GPS Accuracy: ±%.1f m".format(accuracy)
+            } else {
+                gpsAccuracyText.text = "GPS Accuracy: --"
+            }
+            
+            // Update GPS signal strength (based on number of satellites if available)
+            val extras = location.extras
+            if (extras != null && extras.containsKey("satellites")) {
+                val satellites = extras.getInt("satellites")
+                gpsSignalText.text = "GPS Signal: %d satellites".format(satellites)
+            } else {
+                // Estimate signal quality based on accuracy
+                val signalQuality = when {
+                    !location.hasAccuracy() -> "Unknown"
+                    location.accuracy < 5 -> "Excellent"
+                    location.accuracy < 10 -> "Good"
+                    location.accuracy < 20 -> "Fair"
+                    else -> "Poor"
+                }
+                gpsSignalText.text = "GPS Signal: $signalQuality"
+            }
             
             // Track max speed
             if (speedKmh > maxSpeed) {
                 maxSpeed = speedKmh
-                maxSpeedText.text = "Max: %.1f km/h".format(maxSpeed)
+                maxSpeedText.text = "MAX SPEED: %.0f KM/H".format(maxSpeed)
+            }
+            
+            // Calculate trip distance
+            if (lastLocation != null) {
+                val distance = lastLocation!!.distanceTo(location) // in meters
+                // Only add distance if speed > 1 km/h (to avoid GPS drift when stationary)
+                if (speedKmh > 1.0f && distance < 100) { // Also filter out GPS jumps > 100m
+                    totalDistance += distance
+                    val distanceKm = totalDistance / 1000.0
+                    tripDistanceText.text = "DISTANCE: %.2f KM".format(distanceKm)
+                }
+            }
+            lastLocation = location
+            
+            // Calculate average speed
+            totalTime = System.currentTimeMillis() - tripStartTime
+            if (totalTime > 0 && totalDistance > 0) {
+                // Average speed = total distance / total time
+                val avgSpeedMps = totalDistance / (totalTime / 1000.0) // m/s
+                val avgSpeedKmh = avgSpeedMps * 3.6 // km/h
+                avgSpeedText.text = "AVG SPEED: %.1f KM/H".format(avgSpeedKmh)
             }
         }
 
         override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {}
         override fun onProviderEnabled(provider: String) {
-            gpsStatusText.text = "GPS: Enabled"
+            // GPS enabled - signal status will be shown via gpsSignalText
         }
         override fun onProviderDisabled(provider: String) {
-            gpsStatusText.text = "GPS: Disabled - Please enable GPS"
+            gpsSignalText.text = "GPS Signal: Disabled"
+            Toast.makeText(this@MainActivity, "Please enable GPS", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -172,7 +313,6 @@ class MainActivity : Activity() {
                 startGPS()
                 Toast.makeText(this, "Location permission granted", Toast.LENGTH_SHORT).show()
             } else {
-                gpsStatusText.text = "GPS: Permission denied"
                 Toast.makeText(this, "Location permission required for GPS speed", Toast.LENGTH_LONG).show()
             }
         }

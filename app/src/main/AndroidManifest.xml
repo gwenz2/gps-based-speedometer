@@ -5,7 +5,7 @@
     <uses-feature android:name="android.hardware.location.gps" />
 
     <application
-        android:label="Speedometer"
+        android:label="GPS Speedometer"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher"
         android:theme="@style/Theme.Material3.DayNight.NoActionBar">

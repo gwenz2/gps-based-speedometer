@@ -101,6 +101,12 @@ class DragModeActivity : Activity() {
             showSettingsDialog()
         }
 
+        // GPS Info button
+        val gpsInfoButton = findViewById<TextView>(R.id.gps_info_button)
+        gpsInfoButton.setOnClickListener {
+            showGPSInfoDialog()
+        }
+
         locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
 
         if (checkLocationPermission()) {
@@ -190,6 +196,7 @@ class DragModeActivity : Activity() {
         startLocation = null
         
         statusText.text = "Ready - Waiting to start from 0 km/h"
+        statusText.setTextColor(android.graphics.Color.parseColor("#FFFF00")) // Yellow for ready
         
         // Reload and display best results
         loadBestResults()
@@ -245,6 +252,51 @@ class DragModeActivity : Activity() {
             .show()
     }
 
+    private fun showGPSInfoDialog() {
+        val message = """
+            🏁 DRAG RACING MODE INFO
+            
+            🎯 ACCURACY:
+            • Uses high-precision GPS (100ms updates)
+            • More accurate than regular speedometer
+            • Best results in open areas
+            
+            ⏱️ HOW IT WORKS:
+            • Timer auto-starts when speed > 1 km/h
+            • Tracks: 0-60, 0-100, custom speed, distance
+            • Records best times automatically
+            • Status color: Yellow=Ready, Green=Running
+            
+            📊 MEASUREMENTS:
+            • Time precision: 0.01 seconds
+            • Distance precision: 0.01 meters
+            • Speed updated 10x per second
+            
+            💡 USAGE TIPS:
+            • Start from complete stop (0 km/h)
+            • GPS may lag 0.1-0.3 seconds (normal)
+            • Use in safe, legal locations only
+            • Long-press RESET to save & reset times
+            • Tap SETTINGS to customize targets
+            
+            ⭐ BEST TIMES:
+            Your best times are saved and shown with ⭐
+            Beat your records to improve!
+            
+            ⚠️ SAFETY WARNING:
+            This is for track/closed course use only.
+            Never use on public roads. Drive safely!
+            
+            Version 1.3 • Made by gwenz
+        """.trimIndent()
+        
+        AlertDialog.Builder(this)
+            .setTitle("ℹ️ About Drag Racing Mode")
+            .setMessage(message)
+            .setPositiveButton("Got it!", null)
+            .show()
+    }
+
     private fun checkLocationPermission(): Boolean {
         return ContextCompat.checkSelfPermission(
             this,
@@ -273,9 +325,11 @@ class DragModeActivity : Activity() {
                     locationListener
                 )
                 statusText.text = "GPS: Searching... Start from 0 km/h"
+                statusText.setTextColor(android.graphics.Color.parseColor("#FFA500")) // Orange for searching
             }
         } catch (e: SecurityException) {
             statusText.text = "GPS: Permission denied"
+            statusText.setTextColor(android.graphics.Color.parseColor("#FF0000")) // Red for error
         }
     }
 
@@ -291,6 +345,7 @@ class DragModeActivity : Activity() {
                 startLocation = location
                 totalDistance = 0f
                 statusText.text = "⏱️ Timer started!"
+                statusText.setTextColor(android.graphics.Color.parseColor("#00FF00")) // Green for running
             }
 
             // Only track if timer has started
@@ -356,16 +411,19 @@ class DragModeActivity : Activity() {
                 }
 
                 // Update status
-                statusText.text = "⏱️ Running: %.1f s | Distance: %.0f m".format(elapsedTime, totalDistance)
+                statusText.text = "Running: %.2f s | Distance: %.2f m".format(elapsedTime, totalDistance)
+                statusText.setTextColor(android.graphics.Color.parseColor("#00FF00")) // Keep green while running
             }
         }
 
         override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {}
         override fun onProviderEnabled(provider: String) {
             statusText.text = "GPS: Enabled - Ready"
+            statusText.setTextColor(android.graphics.Color.parseColor("#FFFF00")) // Yellow for ready
         }
         override fun onProviderDisabled(provider: String) {
             statusText.text = "GPS: Disabled - Please enable GPS"
+            statusText.setTextColor(android.graphics.Color.parseColor("#FF0000")) // Red for error
         }
     }
 
@@ -380,6 +438,7 @@ class DragModeActivity : Activity() {
                 startGPS()
             } else {
                 statusText.text = "GPS: Permission denied"
+                statusText.setTextColor(android.graphics.Color.parseColor("#FF0000")) // Red for error
                 Toast.makeText(this, "Location permission required", Toast.LENGTH_LONG).show()
             }
         }

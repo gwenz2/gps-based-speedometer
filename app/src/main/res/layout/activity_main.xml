@@ -1,92 +1,169 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fillViewport="true"
+    android:orientation="vertical"
     android:background="#000000">
 
+    <!-- Header -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:background="#1a1a1a"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:paddingTop="16dp"
+        android:paddingBottom="16dp"
+        android:gravity="center_vertical"
+        android:elevation="4dp">
+
+        <Button
+            android:id="@+id/goto_drag_mode_button"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:text="→"
+            android:textSize="20sp"
+            android:backgroundTint="#FF4500"
+            android:textColor="#000000"
+            android:padding="0dp"
+            android:layout_marginEnd="12dp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="SPEEDOMETER"
+            android:textSize="28sp"
+            android:textColor="#00FF00"
+            android:textStyle="bold"
+            android:fontFamily="@font/digital7"
+            android:letterSpacing="0.1" />
+        
+        <TextView
+            android:id="@+id/gps_info_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="ℹ️"
+            android:textSize="20sp"
+            android:padding="8dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="?android:attr/selectableItemBackground" />
+
+    </LinearLayout>
+
+    <!-- Main Speed Display -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:background="#000000">
+
+        <TextView
+            android:id="@+id/gps_speed_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/digital7"
+            android:gravity="center"
+            android:includeFontPadding="true"
+            android:letterSpacing="0.05"
+            android:lineSpacingMultiplier="0.8"
+            android:text="000"
+            android:textColor="#00FF00"
+            android:textSize="150sp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="-12dp"
+            android:fontFamily="@font/digital7"
+            android:letterSpacing="0.2"
+            android:text="KM/H"
+            android:textColor="#00FF00"
+            android:textSize="50sp" />
+
+        <!-- GPS Accuracy -->
+        <TextView
+            android:id="@+id/gps_accuracy_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="GPS Accuracy: --"
+            android:textSize="12sp"
+            android:textColor="#555555"
+            android:fontFamily="monospace" />
+
+        <!-- GPS Signal Strength -->
+        <TextView
+            android:id="@+id/gps_signal_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="GPS Signal: --"
+            android:textSize="12sp"
+            android:textColor="#555555"
+            android:fontFamily="monospace" />
+
+    </LinearLayout>
+
+    <!-- Stats Bar -->
+    <!-- Stats Bar -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:gravity="center"
-        android:background="#1a1a1a"
-        android:paddingStart="16dp"
-        android:paddingEnd="16dp"
-        android:paddingTop="32dp"
-        android:paddingBottom="16dp">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="GPS SPEED"
-            android:textSize="24sp"
-            android:textColor="#00FF00"
-            android:textStyle="bold"
-            android:layout_marginBottom="16dp" />
-
-        <TextView
-            android:id="@+id/gps_speed_text"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="0.0"
-            android:textSize="96sp"
-            android:textColor="#00FF00"
-            android:textStyle="bold"
-            android:fontFamily="monospace"
-            android:maxLines="1"
-            android:autoSizeTextType="uniform"
-            android:autoSizeMinTextSize="48sp"
-            android:autoSizeMaxTextSize="96sp" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="km/h"
-            android:textSize="28sp"
-            android:textColor="#00FF00"
-            android:layout_marginBottom="24dp" />
-
-        <TextView
-            android:id="@+id/gps_status_text"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="GPS: Initializing..."
-            android:textSize="16sp"
-            android:textColor="#888888"
-            android:layout_marginTop="8dp"
-            android:gravity="center" />
+        android:background="#0d0d0d"
+        android:paddingTop="20dp"
+        android:paddingBottom="20dp"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp">
 
         <TextView
             android:id="@+id/max_speed_text"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Max: 0.0 km/h"
-            android:textSize="22sp"
+            android:text="MAX SPEED: 0.0 KM/H"
+            android:textSize="25sp"
             android:textColor="#FFD700"
-            android:textStyle="bold"
-            android:layout_marginTop="16dp"
+            android:fontFamily="@font/digital7"
+            android:gravity="center"
             android:clickable="true"
             android:focusable="true"
-            android:padding="8dp" />
+            android:padding="15dp"
+            android:background="#1a1a1a"
+            android:layout_marginBottom="8dp" />
 
+        <!-- NEW: Average Speed TextView -->
         <TextView
-            android:layout_width="wrap_content"
+            android:id="@+id/avg_speed_text"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="(Hold 3s to reset)"
-            android:textSize="11sp"
-            android:textColor="#666666"
-            android:layout_marginTop="2dp" />
+            android:text="AVG SPEED: 0.0 KM/H"
+            android:textSize="25sp"
+            android:textColor="#FFD700"
+            android:fontFamily="@font/digital7"
+            android:gravity="center"
+            android:padding="15dp"
+            android:background="#1a1a1a"
+            android:layout_marginBottom="8dp" />
 
-        <Button
-            android:id="@+id/goto_drag_mode_button"
-            android:layout_width="wrap_content"
+        <!-- NEW: Trip Distance TextView -->
+        <TextView
+            android:id="@+id/trip_distance_text"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:backgroundTint="#FF4500"
-            android:text=">"
-            android:textSize="16sp" />
+            android:text="DISTANCE: 0.0 KM"
+            android:textSize="25sp"
+            android:textColor="#FFD700"
+            android:fontFamily="@font/digital7"
+            android:gravity="center"
+            android:padding="15dp"
+            android:background="#1a1a1a" />
 
     </LinearLayout>
 
-</ScrollView>
+
+</LinearLayout>
