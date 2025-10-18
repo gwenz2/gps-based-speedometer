@@ -151,11 +151,11 @@
             android:id="@+id/back_to_speedometer_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:text="&lt; SPEEDOMETER"
+            android:textSize="16sp"
             android:layout_marginTop="12dp"
             android:backgroundTint="#00FF00"
-            android:text="<"
-            android:textColor="#000000"
-            android:textSize="16sp" />
+            android:textColor="#000000" />
 
     </LinearLayout>
 

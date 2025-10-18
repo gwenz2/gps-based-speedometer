@@ -5,21 +5,27 @@ A GPS-based speedometer and drag racing timer for Android.
 ## Features
 
 ### 📊 GPS Speedometer (Screen 1)
-- Real-time speed display in km/h
-- Smooth animated speed transitions
-- Maximum speed tracking with tap-to-reset
-- GPS status indicator
-- Portrait-only mode for driving safety
+- Real-time speed display in km/h with mph reference
+- **Smooth animated speed transitions** (60fps interpolation)
+- Maximum speed tracking with **3-second long-press reset**
+- GPS status indicator with accuracy display
+- **Portrait-only mode** for driving safety
+- **Screen stays awake** during use
+- Responsive design for all screen sizes
 
 ### 🏁 Drag Racing Mode (Screen 2)
-- Auto-start timer from 0 km/h
+- **Auto-start timer** from 0 km/h (no manual button needed)
 - Performance measurements:
   - **0-60 km/h** time
   - **0-100 km/h** time
   - **Custom speed target** (default: 80 km/h, configurable)
   - **Custom distance** (default: 400m, configurable)
+- **Best time tracking** with ⭐ indicator (persistent across sessions)
+- Current time vs. best time comparison
 - Configurable targets via settings dialog
-- Reset functionality for multiple runs
+- **3-second long-press reset** to prevent accidental resets
+- Distance tracking with real-time display
+- **Screen stays awake** during racing
 
 ## Screenshots
 
@@ -45,25 +51,35 @@ A GPS-based speedometer and drag racing timer for Android.
 4. Build and run on your device
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/PhoneSteering.git
-cd PhoneSteering
+git clone https://github.com/gwenz2/gps-based-speedometer.git
+cd gps-based-speedometer
 ./gradlew assembleDebug
 ```
 
 ## Usage
 
+### GPS Speedometer Mode
 1. **Launch the app** - Grant location permissions when prompted
-2. **GPS Speedometer** - Wait for GPS signal (go outside for best results)
-3. **Switch to Drag Mode** - Tap the "→ DRAG MODE" button
-4. **Start Racing** - Come to complete stop (0 km/h), timer auto-starts when you accelerate
-5. **View Results** - See your 0-60, 0-100, custom speed, and distance times
-6. **Customize Targets** - Tap "SETTINGS" to change speed/distance goals
-7. **Reset** - Tap "RESET" to clear results and start fresh
+2. Wait for GPS signal (go outside for best results)
+3. View your current speed with smooth animations
+4. **Reset max speed** - Hold the max speed text for 3 seconds
+5. **Switch modes** - Tap the "→ DRAG MODE" button
+
+### Drag Racing Mode
+1. Tap "→ DRAG MODE" from the speedometer screen
+2. **Come to complete stop** (0 km/h) - timer is ready
+3. **Accelerate** - Timer starts automatically when you move
+4. Watch your times populate as you hit each milestone
+5. **View best times** - Your personal records show with ⭐ symbol
+6. **Customize targets** - Tap "SETTINGS" to change speed/distance goals
+7. **Reset for next run** - Hold "RESET" button for 3 seconds
+8. **Go back** - Tap "← SPEEDOMETER" button to return
 
 ## Permissions
 
 - **ACCESS_FINE_LOCATION** - Required for GPS speed measurement
 - **ACCESS_COARSE_LOCATION** - Required for location services
+- **WAKE_LOCK** - Keeps screen on during use (no timeout)
 
 ## Technology Stack
 
@@ -80,35 +96,28 @@ cd PhoneSteering
 ```
 app/
 ├── src/main/
-│   ├── java/com/balajedrion/phonesteering/
+│   ├── java/com/gwenz/speedometer/
 │   │   ├── MainActivity.kt           # GPS Speedometer
 │   │   └── DragModeActivity.kt       # Drag Racing Timer
 │   ├── res/
 │   │   ├── layout/
 │   │   │   ├── activity_main.xml     # Speedometer UI
 │   │   │   └── activity_drag_mode.xml # Drag Mode UI
+│   │   ├── mipmap-*/                 # App icons
 │   │   └── values/
 │   └── AndroidManifest.xml
+└── build.gradle.kts
 ```
 
 ### Key Features Implementation
-- **Smooth Speed Animation**: 60fps interpolation using Handler with 16ms delay
-- **Auto-start Timer**: Detects movement from 0 km/h
+- **Smooth Speed Animation**: 60fps interpolation using Handler with 16ms delay and 0.3 factor
+- **Auto-start Timer**: Detects movement from 0 km/h (>1 km/h threshold)
 - **Distance Tracking**: Uses Location.distanceTo() for accurate measurements
-- **Persistent Settings**: SharedPreferences for custom targets
-
-## Roadmap
-
-- [ ] Add mph toggle option
-- [ ] Export/share race results
-- [ ] Lap timer functionality
-- [ ] Historical data tracking
-- [ ] Keep screen awake during use
-- [ ] Dark/Light theme options
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
+- **Persistent Settings**: SharedPreferences for custom targets and best times
+- **Long Press Reset**: 3-second hold with visual feedback and haptic response
+- **Best Time Management**: Automatically saves and compares personal records
+- **Screen Wake Lock**: Keeps display on using keepScreenOn attribute
+- **Responsive UI**: Auto-sizing text and ScrollView for various screen sizes
 
 ## License
 
@@ -118,14 +127,14 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ⚠️ **Safety First**: This app is intended for closed course/track use only. Always obey traffic laws and never use your phone while driving on public roads. The developer is not responsible for any accidents or violations.
 
-## Support
-
-If you encounter any issues or have suggestions, please [open an issue](../../issues).
-
 ## Author
 
-**Gwen Balajedrion**
+**Gwen** (@gwenz2)
+
+## Repository
+
+[https://github.com/gwenz2/gps-based-speedometer](https://github.com/gwenz2/gps-based-speedometer)
 
 ---
 
-Made with ❤️ for car enthusiasts
+Made with ❤️ for car enthusiasts and track day warriors

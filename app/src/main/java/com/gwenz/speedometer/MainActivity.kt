@@ -1,4 +1,4 @@
-package com.balajedrion.phonesteering
+package com.gwenz.speedometer
 
 import android.Manifest
 import android.app.Activity
@@ -63,11 +63,30 @@ class MainActivity : Activity() {
             overridePendingTransition(android.R.anim.slide_in_left, android.R.anim.slide_out_right)
         }
 
-        // Make max speed text clickable to reset
-        maxSpeedText.setOnClickListener {
-            maxSpeed = 0.0f
-            maxSpeedText.text = "Max: 0.0 km/h"
-            Toast.makeText(this, "Max speed reset", Toast.LENGTH_SHORT).show()
+        // Make max speed text long-pressable to reset (3 seconds)
+        var resetHandler: android.os.Handler? = null
+        var resetRunnable: Runnable? = null
+        
+        maxSpeedText.setOnTouchListener { view, event ->
+            when (event.action) {
+                android.view.MotionEvent.ACTION_DOWN -> {
+                    resetHandler = android.os.Handler(android.os.Looper.getMainLooper())
+                    resetRunnable = Runnable {
+                        maxSpeed = 0.0f
+                        maxSpeedText.text = "Max: 0.0 km/h"
+                        Toast.makeText(this, "Max speed reset", Toast.LENGTH_SHORT).show()
+                        view.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS)
+                    }
+                    resetHandler?.postDelayed(resetRunnable!!, 3000)
+                    Toast.makeText(this, "Hold to reset max speed...", Toast.LENGTH_SHORT).show()
+                    true
+                }
+                android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL -> {
+                    resetHandler?.removeCallbacks(resetRunnable!!)
+                    true
+                }
+                else -> false
+            }
         }
 
         // Request location permissions

@@ -4,15 +4,15 @@ plugins {
 }
 
 android {
-    namespace = "com.balajedrion.phonesteering"
+    namespace = "com.gwenz.speedometer"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.balajedrion.phonesteering"
+        applicationId = "com.gwenz.speedometer"
         minSdk = 28
         targetSdk = 36
-        versionCode = 2
-        versionName = "1.1"
+        versionCode = 3
+        versionName = "1.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

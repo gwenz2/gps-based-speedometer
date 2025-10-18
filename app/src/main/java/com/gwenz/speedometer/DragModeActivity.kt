@@ -1,4 +1,4 @@
-package com.balajedrion.phonesteering
+package com.gwenz.speedometer
 
 import android.Manifest
 import android.app.Activity
@@ -64,6 +64,7 @@ class DragModeActivity : Activity() {
 
         loadSettings()
         updateCustomLabels()
+        loadBestResults()
 
         // Back button to return to speedometer
         val backButton = findViewById<android.widget.Button>(R.id.back_to_speedometer_button)
@@ -72,8 +73,28 @@ class DragModeActivity : Activity() {
             overridePendingTransition(android.R.anim.slide_in_left, android.R.anim.slide_out_right)
         }
 
-        resetButton.setOnClickListener {
-            resetTimer()
+        // Reset button - long press (3 seconds)
+        var resetHandler: android.os.Handler? = null
+        var resetRunnable: Runnable? = null
+        
+        resetButton.setOnTouchListener { view, event ->
+            when (event.action) {
+                android.view.MotionEvent.ACTION_DOWN -> {
+                    resetHandler = android.os.Handler(android.os.Looper.getMainLooper())
+                    resetRunnable = Runnable {
+                        resetTimer()
+                        view.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS)
+                    }
+                    resetHandler?.postDelayed(resetRunnable!!, 3000)
+                    Toast.makeText(this, "Hold to reset...", Toast.LENGTH_SHORT).show()
+                    true
+                }
+                android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL -> {
+                    resetHandler?.removeCallbacks(resetRunnable!!)
+                    true
+                }
+                else -> false
+            }
         }
 
         settingsButton.setOnClickListener {
@@ -104,12 +125,61 @@ class DragModeActivity : Activity() {
         }
     }
 
+    private fun loadBestResults() {
+        val prefs = getSharedPreferences("DragModeSettings", Context.MODE_PRIVATE)
+        val best0to60 = prefs.getFloat("best0to60", 0f)
+        val best0to100 = prefs.getFloat("best0to100", 0f)
+        val bestCustomSpeed = prefs.getFloat("bestCustomSpeed", 0f)
+        val bestCustomDistance = prefs.getFloat("bestCustomDistance", 0f)
+        
+        if (best0to60 > 0) {
+            time0to60Text.text = "0-60 km/h: %.2fs ⭐%.2fs".format(0f, best0to60)
+        }
+        if (best0to100 > 0) {
+            time0to100Text.text = "0-100 km/h: %.2fs ⭐%.2fs".format(0f, best0to100)
+        }
+        if (bestCustomSpeed > 0) {
+            timeCustomText.text = "0-${customSpeed.toInt()} km/h: %.2fs ⭐%.2fs".format(0f, bestCustomSpeed)
+        }
+        if (bestCustomDistance > 0) {
+            distanceCustomText.text = "${customDistance.toInt()}m: %.2fs ⭐%.2fs".format(0f, bestCustomDistance)
+        }
+    }
+
+    private fun saveBestResults() {
+        val prefs = getSharedPreferences("DragModeSettings", Context.MODE_PRIVATE)
+        val currentBest0to60 = prefs.getFloat("best0to60", Float.MAX_VALUE)
+        val currentBest0to100 = prefs.getFloat("best0to100", Float.MAX_VALUE)
+        val currentBestCustomSpeed = prefs.getFloat("bestCustomSpeed", Float.MAX_VALUE)
+        val currentBestCustomDistance = prefs.getFloat("bestCustomDistance", Float.MAX_VALUE)
+        
+        prefs.edit().apply {
+            // Save if new time is better (lower) than current best
+            if (time0to60 > 0 && time0to60 < currentBest0to60) {
+                putFloat("best0to60", time0to60)
+            }
+            if (time0to100 > 0 && time0to100 < currentBest0to100) {
+                putFloat("best0to100", time0to100)
+            }
+            if (timeToCustomSpeed > 0 && timeToCustomSpeed < currentBestCustomSpeed) {
+                putFloat("bestCustomSpeed", timeToCustomSpeed)
+            }
+            if (timeToCustomDistance > 0 && timeToCustomDistance < currentBestCustomDistance) {
+                putFloat("bestCustomDistance", timeToCustomDistance)
+            }
+            apply()
+        }
+    }
+
     private fun updateCustomLabels() {
         timeCustomText.text = "0-${customSpeed.toInt()} km/h: --"
         distanceCustomText.text = "${customDistance.toInt()}m: --"
     }
 
     private fun resetTimer() {
+        // Save best results before resetting
+        saveBestResults()
+        
         isTimerStarted = false
         startTime = 0L
         time0to60 = 0f
@@ -120,9 +190,9 @@ class DragModeActivity : Activity() {
         startLocation = null
         
         statusText.text = "Ready - Waiting to start from 0 km/h"
-        time0to60Text.text = "0-60 km/h: --"
-        time0to100Text.text = "0-100 km/h: --"
-        updateCustomLabels()
+        
+        // Reload and display best results
+        loadBestResults()
         
         Toast.makeText(this, "Timer reset", Toast.LENGTH_SHORT).show()
     }
@@ -236,27 +306,53 @@ class DragModeActivity : Activity() {
                 // Check 0-60 km/h
                 if (time0to60 == 0f && speedKmh >= 60f) {
                     time0to60 = elapsedTime
-                    time0to60Text.text = "0-60 km/h: %.2f s".format(time0to60)
+                    val prefs = getSharedPreferences("DragModeSettings", Context.MODE_PRIVATE)
+                    val best = prefs.getFloat("best0to60", 0f)
+                    if (best > 0) {
+                        time0to60Text.text = "0-60 km/h: %.2fs ⭐%.2fs".format(time0to60, best)
+                    } else {
+                        time0to60Text.text = "0-60 km/h: %.2f s".format(time0to60)
+                    }
                 }
 
                 // Check 0-100 km/h
                 if (time0to100 == 0f && speedKmh >= 100f) {
                     time0to100 = elapsedTime
-                    time0to100Text.text = "0-100 km/h: %.2f s".format(time0to100)
+                    val prefs = getSharedPreferences("DragModeSettings", Context.MODE_PRIVATE)
+                    val best = prefs.getFloat("best0to100", 0f)
+                    if (best > 0) {
+                        time0to100Text.text = "0-100 km/h: %.2fs ⭐%.2fs".format(time0to100, best)
+                    } else {
+                        time0to100Text.text = "0-100 km/h: %.2f s".format(time0to100)
+                    }
                 }
 
                 // Check custom speed
                 if (timeToCustomSpeed == 0f && speedKmh >= customSpeed) {
                     timeToCustomSpeed = elapsedTime
-                    timeCustomText.text = "0-${customSpeed.toInt()} km/h: %.2f s".format(timeToCustomSpeed)
+                    val prefs = getSharedPreferences("DragModeSettings", Context.MODE_PRIVATE)
+                    val best = prefs.getFloat("bestCustomSpeed", 0f)
+                    if (best > 0) {
+                        timeCustomText.text = "0-${customSpeed.toInt()} km/h: %.2fs ⭐%.2fs".format(timeToCustomSpeed, best)
+                    } else {
+                        timeCustomText.text = "0-${customSpeed.toInt()} km/h: %.2f s".format(timeToCustomSpeed)
+                    }
                 }
 
                 // Check custom distance
                 if (timeToCustomDistance == 0f && totalDistance >= customDistance) {
                     timeToCustomDistance = elapsedTime
-                    distanceCustomText.text = "${customDistance.toInt()}m: %.2f s (%.1f km/h)".format(
-                        timeToCustomDistance, speedKmh
-                    )
+                    val prefs = getSharedPreferences("DragModeSettings", Context.MODE_PRIVATE)
+                    val best = prefs.getFloat("bestCustomDistance", 0f)
+                    if (best > 0) {
+                        distanceCustomText.text = "${customDistance.toInt()}m: %.2fs (%.1f km/h) ⭐%.2fs".format(
+                            timeToCustomDistance, speedKmh, best
+                        )
+                    } else {
+                        distanceCustomText.text = "${customDistance.toInt()}m: %.2f s (%.1f km/h)".format(
+                            timeToCustomDistance, speedKmh
+                        )
+                    }
                 }
 
                 // Update status
