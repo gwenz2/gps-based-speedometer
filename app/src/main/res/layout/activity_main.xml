@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:background="#000000">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:background="#1a1a1a"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingTop="32dp"
+        android:paddingBottom="16dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="GPS SPEED"
+            android:textSize="24sp"
+            android:textColor="#00FF00"
+            android:textStyle="bold"
+            android:layout_marginBottom="16dp" />
+
+        <TextView
+            android:id="@+id/gps_speed_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0.0"
+            android:textSize="96sp"
+            android:textColor="#00FF00"
+            android:textStyle="bold"
+            android:fontFamily="monospace"
+            android:maxLines="1"
+            android:autoSizeTextType="uniform"
+            android:autoSizeMinTextSize="48sp"
+            android:autoSizeMaxTextSize="96sp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="km/h"
+            android:textSize="28sp"
+            android:textColor="#00FF00"
+            android:layout_marginBottom="24dp" />
+
+        <TextView
+            android:id="@+id/gps_status_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="GPS: Initializing..."
+            android:textSize="16sp"
+            android:textColor="#888888"
+            android:layout_marginTop="8dp"
+            android:gravity="center" />
+
+        <TextView
+            android:id="@+id/max_speed_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Max: 0.0 km/h"
+            android:textSize="22sp"
+            android:textColor="#FFD700"
+            android:textStyle="bold"
+            android:layout_marginTop="16dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:padding="8dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="(Tap to reset)"
+            android:textSize="11sp"
+            android:textColor="#666666"
+            android:layout_marginTop="2dp" />
+
+        <Button
+            android:id="@+id/goto_drag_mode_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:backgroundTint="#FF4500"
+            android:text=">"
+            android:textSize="16sp" />
+
+    </LinearLayout>
+
+</ScrollView>
