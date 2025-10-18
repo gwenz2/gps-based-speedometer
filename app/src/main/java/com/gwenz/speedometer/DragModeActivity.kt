@@ -287,7 +287,7 @@ class DragModeActivity : Activity() {
             This is for track/closed course use only.
             Never use on public roads. Drive safely!
             
-            Version 1.3 • Made by gwenz
+            Version 1.4 • Made by Balajedrion
         """.trimIndent()
         
         AlertDialog.Builder(this)

@@ -200,7 +200,7 @@
                     android:layout_weight="1"
                     android:text="RESET"
                     android:textSize="20sp"
-                    android:backgroundTint="#333333"
+                    android:backgroundTint="@color/black"
                     android:fontFamily="@font/digital7"
                     android:layout_marginEnd="8dp" />
 
@@ -211,8 +211,7 @@
                     android:layout_weight="1"
                     android:text="SETTINGS"
                     android:textSize="20sp"
-
-                    android:backgroundTint="#333333"
+                    android:backgroundTint="@color/black"
                     android:fontFamily="@font/digital7"
                     android:layout_marginStart="8dp" />
 

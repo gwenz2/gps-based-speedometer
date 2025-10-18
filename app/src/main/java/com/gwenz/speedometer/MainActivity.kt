@@ -184,7 +184,7 @@ class MainActivity : Activity() {
             This app is for informational purposes only. 
             Always follow traffic laws and drive safely.
             
-            Version 1.3 • Made by gwenz
+            Version 1.4 • Made by Balajedrion
         """.trimIndent()
         
         AlertDialog.Builder(this)
