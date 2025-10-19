@@ -11,15 +11,22 @@ import android.location.LocationManager
 import android.os.Bundle
 import android.widget.TextView
 import android.widget.Toast
-import kotlin.math.abs
+import android.widget.FrameLayout
+import android.view.View
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import kotlin.math.abs
 import android.app.AlertDialog
+import android.util.Log
+import com.startapp.sdk.adsbase.StartAppAd
+import com.startapp.sdk.ads.banner.BannerFormat
+import com.startapp.sdk.ads.banner.BannerRequest
+import com.startapp.sdk.ads.banner.BannerListener
+import kotlin.math.abs
 
 class MainActivity : Activity() {
 
     private lateinit var locationManager: LocationManager
+    private lateinit var bannerContainer: FrameLayout
     
     private lateinit var gpsSpeedText: TextView
     private lateinit var maxSpeedText: TextView
@@ -65,11 +72,15 @@ class MainActivity : Activity() {
         gpsSignalText = findViewById(R.id.gps_signal_text)
         avgSpeedText = findViewById(R.id.avg_speed_text)
         tripDistanceText = findViewById(R.id.trip_distance_text)
+        bannerContainer = findViewById(R.id.banner_container)
 
         locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
         
         // Initialize trip start time
         tripStartTime = System.currentTimeMillis()
+        
+        // Load banner ad (following demo pattern)
+        loadBannerAd()
 
         // Button to go to drag mode
         val gotoDragModeButton = findViewById<android.widget.Button>(R.id.goto_drag_mode_button)
@@ -217,7 +228,7 @@ class MainActivity : Activity() {
             if (checkLocationPermission()) {
                 locationManager.requestLocationUpdates(
                     LocationManager.GPS_PROVIDER,
-                    1000, // 1 second
+                    500, // 0.5 second
                     0f,   // 0 meters
                     locationListener
                 )
@@ -325,5 +336,43 @@ class MainActivity : Activity() {
         super.onDestroy()
         locationManager.removeUpdates(locationListener)
         speedUpdateHandler.removeCallbacks(speedAnimationRunnable)
+    }
+
+    override fun onBackPressed() {
+        StartAppAd.showAd(this)
+        super.onBackPressed()
+    }
+    
+    // Banner Ad Loading (following official demo pattern)
+    private fun loadBannerAd() {
+        BannerRequest(applicationContext)
+            .setAdFormat(BannerFormat.BANNER)
+            .load { creator, error ->
+                if (creator != null) {
+                    val adView = creator.create(applicationContext, object : BannerListener {
+                        override fun onReceiveAd(banner: View?) {
+                            Log.d("MainActivity", "Banner ad received")
+                        }
+
+                        override fun onFailedToReceiveAd(banner: View?) {
+                            Log.e("MainActivity", "Banner ad failed to load")
+                        }
+
+                        override fun onImpression(banner: View?) {
+                            Log.d("MainActivity", "Banner ad impression")
+                        }
+
+                        override fun onClick(banner: View?) {
+                            Log.d("MainActivity", "Banner ad clicked")
+                        }
+                    })
+                    
+                    // Add banner to container
+                    bannerContainer.removeAllViews()
+                    bannerContainer.addView(adView)
+                } else {
+                    Log.e("MainActivity", "Banner error: $error")
+                }
+            }
     }
 }

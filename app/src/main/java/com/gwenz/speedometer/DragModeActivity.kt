@@ -15,13 +15,21 @@ import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import android.widget.FrameLayout
+import android.view.View
+import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.startapp.sdk.adsbase.StartAppAd
+import com.startapp.sdk.ads.banner.BannerFormat
+import com.startapp.sdk.ads.banner.BannerRequest
+import com.startapp.sdk.ads.banner.BannerListener
 import kotlin.math.abs
 
 class DragModeActivity : Activity() {
 
     private lateinit var locationManager: LocationManager
+    private lateinit var bannerContainer: FrameLayout
     
     private lateinit var currentSpeedText: TextView
     private lateinit var statusText: TextView
@@ -67,10 +75,14 @@ class DragModeActivity : Activity() {
         distanceCustomText = findViewById(R.id.time_custom_distance)
         resetButton = findViewById(R.id.reset_button)
         settingsButton = findViewById(R.id.settings_button)
+        bannerContainer = findViewById(R.id.banner_container)
 
         loadSettings()
         updateCustomLabels()
         loadBestResults()
+        
+        // Load banner ad
+        loadBannerAd()
 
         // Back button to return to speedometer
         val backButton = findViewById<android.widget.Button>(R.id.back_to_speedometer_button)
@@ -479,5 +491,38 @@ class DragModeActivity : Activity() {
     override fun onDestroy() {
         super.onDestroy()
         locationManager.removeUpdates(locationListener)
+    }
+    
+    // Banner Ad Loading (following official demo pattern)
+    private fun loadBannerAd() {
+        BannerRequest(applicationContext)
+            .setAdFormat(BannerFormat.BANNER)
+            .load { creator, error ->
+                if (creator != null) {
+                    val adView = creator.create(applicationContext, object : BannerListener {
+                        override fun onReceiveAd(banner: View?) {
+                            Log.d("DragModeActivity", "Banner ad received")
+                        }
+
+                        override fun onFailedToReceiveAd(banner: View?) {
+                            Log.e("DragModeActivity", "Banner ad failed to load")
+                        }
+
+                        override fun onImpression(banner: View?) {
+                            Log.d("DragModeActivity", "Banner ad impression")
+                        }
+
+                        override fun onClick(banner: View?) {
+                            Log.d("DragModeActivity", "Banner ad clicked")
+                        }
+                    })
+                    
+                    // Add banner to container
+                    bannerContainer.removeAllViews()
+                    bannerContainer.addView(adView)
+                } else {
+                    Log.e("DragModeActivity", "Banner error: $error")
+                }
+            }
     }
 }
