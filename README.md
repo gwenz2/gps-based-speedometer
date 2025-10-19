@@ -47,8 +47,8 @@ A GPS-based speedometer and drag racing timer for Android with real-time trackin
 
 ## Screenshots
 
-![Screenshot of screen 1.](ss/ss1.png)
-![Screenshot of screen 2.](ss/ss2.png)
+<img src="ss/ss1.png" width="300" alt="Screenshot of screen 1">
+<img src="ss/ss2.png" width="300" alt="Screenshot of screen 2">
 
 ## Requirements
 
