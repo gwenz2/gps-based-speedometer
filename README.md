@@ -137,16 +137,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 Made with ❤️ for speed enthusiasts
 
 </div>
-  - Satellite count detection from location extras
-- **Distance Tracking**: Uses Location.distanceTo() for accurate measurements
-- **Persistent Settings**: SharedPreferences for custom targets and best times
-- **Long Press Reset**: 3-second hold with visual feedback and haptic response
-- **Best Time Management**: Automatically saves and compares personal records
-- **Dynamic Status Colors**: Color.parseColor() for real-time status indication
-- **Info Dialogs**: AlertDialog with comprehensive usage instructions and disclaimers
-- **Screen Wake Lock**: Keeps display on using keepScreenOn attribute
-- **Digital Font**: Custom digital7.ttf for authentic speedometer look
-- **Responsive UI**: Fixed headers with organized panel layout
 
 ## License
 
