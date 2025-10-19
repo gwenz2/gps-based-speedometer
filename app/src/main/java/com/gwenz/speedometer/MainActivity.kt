@@ -46,11 +46,11 @@ class MainActivity : Activity() {
             if (abs(currentDisplaySpeed - targetSpeed) > 0.1f) {
                 // Smooth interpolation
                 currentDisplaySpeed += (targetSpeed - currentDisplaySpeed) * 0.3f
-                gpsSpeedText.text = "%03.0f".format(currentDisplaySpeed)
+                gpsSpeedText.text = "%.0f".format(currentDisplaySpeed)
                 speedUpdateHandler.postDelayed(this, 16) // ~60fps
             } else {
                 currentDisplaySpeed = targetSpeed
-                gpsSpeedText.text = "%03.0f".format(currentDisplaySpeed)
+                gpsSpeedText.text = "%.0f".format(currentDisplaySpeed)
             }
         }
     }
@@ -249,18 +249,21 @@ class MainActivity : Activity() {
             
             // Update GPS signal strength (based on number of satellites if available)
             val extras = location.extras
+            
+            // Determine signal quality based on accuracy
+            val signalQuality = when {
+                !location.hasAccuracy() -> "Unknown"
+                location.accuracy < 5 -> "Excellent"
+                location.accuracy < 10 -> "Good"
+                location.accuracy < 20 -> "Fair"
+                else -> "Poor"
+            }
+            
+            // Show both satellite count and quality if available
             if (extras != null && extras.containsKey("satellites")) {
                 val satellites = extras.getInt("satellites")
-                gpsSignalText.text = "GPS Signal: %d satellites".format(satellites)
+                gpsSignalText.text = "GPS Signal: $signalQuality ($satellites sats)".format(satellites)
             } else {
-                // Estimate signal quality based on accuracy
-                val signalQuality = when {
-                    !location.hasAccuracy() -> "Unknown"
-                    location.accuracy < 5 -> "Excellent"
-                    location.accuracy < 10 -> "Good"
-                    location.accuracy < 20 -> "Fair"
-                    else -> "Poor"
-                }
                 gpsSignalText.text = "GPS Signal: $signalQuality"
             }
             

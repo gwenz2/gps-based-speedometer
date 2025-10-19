@@ -42,6 +42,12 @@ class DragModeActivity : Activity() {
     private var time0to100 = 0f
     private var timeToCustomSpeed = 0f
     
+    // Speed confirmation counters (for hysteresis/smoothing)
+    private var count0to60 = 0
+    private var count0to100 = 0
+    private var countCustomSpeed = 0
+    private val CONFIRMATION_THRESHOLD = 2 // Require 2 consecutive readings
+    
     // Distance tracking
     private var startLocation: Location? = null
     private var totalDistance = 0f
@@ -194,6 +200,11 @@ class DragModeActivity : Activity() {
         totalDistance = 0f
         timeToCustomDistance = 0f
         startLocation = null
+        
+        // Reset confirmation counters
+        count0to60 = 0
+        count0to100 = 0
+        countCustomSpeed = 0
         
         statusText.text = "Ready - Waiting to start from 0 km/h"
         statusText.setTextColor(android.graphics.Color.parseColor("#FFFF00")) // Yellow for ready
@@ -358,39 +369,60 @@ class DragModeActivity : Activity() {
                     startLocation = location // Update for next calculation
                 }
 
-                // Check 0-60 km/h
-                if (time0to60 == 0f && speedKmh >= 60f) {
-                    time0to60 = elapsedTime
-                    val prefs = getSharedPreferences("DragModeSettings", Context.MODE_PRIVATE)
-                    val best = prefs.getFloat("best0to60", 0f)
-                    if (best > 0) {
-                        time0to60Text.text = "0-60 km/h: %.2fs ⭐%.2fs".format(time0to60, best)
+                // Check 0-60 km/h with smoothing
+                if (time0to60 == 0f) {
+                    if (speedKmh >= 60f) {
+                        count0to60++
+                        if (count0to60 >= CONFIRMATION_THRESHOLD) {
+                            time0to60 = elapsedTime
+                            val prefs = getSharedPreferences("DragModeSettings", Context.MODE_PRIVATE)
+                            val best = prefs.getFloat("best0to60", 0f)
+                            if (best > 0) {
+                                time0to60Text.text = "0-60 km/h: %.2fs ⭐%.2fs".format(time0to60, best)
+                            } else {
+                                time0to60Text.text = "0-60 km/h: %.2fs".format(time0to60)
+                            }
+                        }
                     } else {
-                        time0to60Text.text = "0-60 km/h: %.2f s".format(time0to60)
+                        count0to60 = 0 // Reset counter if speed drops below threshold
                     }
                 }
 
-                // Check 0-100 km/h
-                if (time0to100 == 0f && speedKmh >= 100f) {
-                    time0to100 = elapsedTime
-                    val prefs = getSharedPreferences("DragModeSettings", Context.MODE_PRIVATE)
-                    val best = prefs.getFloat("best0to100", 0f)
-                    if (best > 0) {
-                        time0to100Text.text = "0-100 km/h: %.2fs ⭐%.2fs".format(time0to100, best)
+                // Check 0-100 km/h with smoothing
+                if (time0to100 == 0f) {
+                    if (speedKmh >= 100f) {
+                        count0to100++
+                        if (count0to100 >= CONFIRMATION_THRESHOLD) {
+                            time0to100 = elapsedTime
+                            val prefs = getSharedPreferences("DragModeSettings", Context.MODE_PRIVATE)
+                            val best = prefs.getFloat("best0to100", 0f)
+                            if (best > 0) {
+                                time0to100Text.text = "0-100 km/h: %.2fs ⭐%.2fs".format(time0to100, best)
+                            } else {
+                                time0to100Text.text = "0-100 km/h: %.2fs".format(time0to100)
+                            }
+                        }
                     } else {
-                        time0to100Text.text = "0-100 km/h: %.2f s".format(time0to100)
+                        count0to100 = 0 // Reset counter if speed drops below threshold
                     }
                 }
 
-                // Check custom speed
-                if (timeToCustomSpeed == 0f && speedKmh >= customSpeed) {
-                    timeToCustomSpeed = elapsedTime
-                    val prefs = getSharedPreferences("DragModeSettings", Context.MODE_PRIVATE)
-                    val best = prefs.getFloat("bestCustomSpeed", 0f)
-                    if (best > 0) {
-                        timeCustomText.text = "0-${customSpeed.toInt()} km/h: %.2fs ⭐%.2fs".format(timeToCustomSpeed, best)
+                // Check custom speed with smoothing
+                if (timeToCustomSpeed == 0f) {
+                    if (speedKmh >= customSpeed) {
+                        countCustomSpeed++
+                        if (countCustomSpeed >= CONFIRMATION_THRESHOLD) {
+                            timeToCustomSpeed = elapsedTime
+                            val prefs = getSharedPreferences("DragModeSettings", Context.MODE_PRIVATE)
+                            val best = prefs.getFloat("bestCustomSpeed", 0f)
+                            if (best > 0) {
+                                timeCustomText.text = "0-${customSpeed.toInt()} km/h: %.2fs ⭐%.2fs".format(timeToCustomSpeed, best)
+                            } else {
+                                timeCustomText.text = "0-${customSpeed.toInt()} km/h: %.2fs".format(timeToCustomSpeed)
+                            }
+                        }
                     } else {
-                        timeCustomText.text = "0-${customSpeed.toInt()} km/h: %.2f s".format(timeToCustomSpeed)
+                        countCustomSpeed = 0 // Reset counter if speed drops below threshold
                     }
                 }
 
