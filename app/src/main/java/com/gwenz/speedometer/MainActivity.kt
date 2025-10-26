@@ -11,22 +11,14 @@ import android.location.LocationManager
 import android.os.Bundle
 import android.widget.TextView
 import android.widget.Toast
-import android.widget.FrameLayout
-import android.view.View
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import android.app.AlertDialog
-import android.util.Log
-import com.startapp.sdk.adsbase.StartAppAd
-import com.startapp.sdk.ads.banner.BannerFormat
-import com.startapp.sdk.ads.banner.BannerRequest
-import com.startapp.sdk.ads.banner.BannerListener
 import kotlin.math.abs
 
 class MainActivity : Activity() {
 
     private lateinit var locationManager: LocationManager
-    private lateinit var bannerContainer: FrameLayout
     
     private lateinit var gpsSpeedText: TextView
     private lateinit var maxSpeedText: TextView
@@ -41,26 +33,10 @@ class MainActivity : Activity() {
     // Trip tracking variables
     private var totalDistance = 0.0 // in meters
     private var totalTime = 0L // in milliseconds
+    private var movingTime = 0L // in milliseconds - only counts when moving
     private var lastLocation: Location? = null
+    private var lastUpdateTime = 0L
     private var tripStartTime = 0L
-    
-    // For smooth speed animation
-    private var currentDisplaySpeed = 0f
-    private var targetSpeed = 0f
-    private val speedUpdateHandler = android.os.Handler(android.os.Looper.getMainLooper())
-    private val speedAnimationRunnable = object : Runnable {
-        override fun run() {
-            if (abs(currentDisplaySpeed - targetSpeed) > 0.1f) {
-                // Smooth interpolation
-                currentDisplaySpeed += (targetSpeed - currentDisplaySpeed) * 0.3f
-                gpsSpeedText.text = "%.0f".format(currentDisplaySpeed)
-                speedUpdateHandler.postDelayed(this, 16) // ~60fps
-            } else {
-                currentDisplaySpeed = targetSpeed
-                gpsSpeedText.text = "%.0f".format(currentDisplaySpeed)
-            }
-        }
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -72,15 +48,11 @@ class MainActivity : Activity() {
         gpsSignalText = findViewById(R.id.gps_signal_text)
         avgSpeedText = findViewById(R.id.avg_speed_text)
         tripDistanceText = findViewById(R.id.trip_distance_text)
-        bannerContainer = findViewById(R.id.banner_container)
 
         locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
         
         // Initialize trip start time
         tripStartTime = System.currentTimeMillis()
-        
-        // Load banner ad (following demo pattern)
-        loadBannerAd()
 
         // Button to go to drag mode
         val gotoDragModeButton = findViewById<android.widget.Button>(R.id.goto_drag_mode_button)
@@ -128,7 +100,9 @@ class MainActivity : Activity() {
                         // Reset trip data
                         totalDistance = 0.0
                         totalTime = 0L
+                        movingTime = 0L
                         lastLocation = null
+                        lastUpdateTime = 0L
                         tripStartTime = System.currentTimeMillis()
                         avgSpeedText.text = "AVG SPEED: 0 KM/H"
                         tripDistanceText.text = "DISTANCE: 0.0 KM"
@@ -174,7 +148,7 @@ class MainActivity : Activity() {
             • Best accuracy outdoors with clear sky
             
             ⏱️ UPDATE RATE:
-            • Speed updates every 1 second
+            • Speed updates every 0.2 second
             • Smooth animation for visual comfort
             • May show slight delay (normal behavior)
             
@@ -195,13 +169,19 @@ class MainActivity : Activity() {
             This app is for informational purposes only. 
             Always follow traffic laws and drive safely.
             
-            Version 1.4 • Made by Balajedrion
+            Version 3.0 • Made by Balajedrion
+            
+            ☕ Support: buymeacoffee.com/Gwenvio
         """.trimIndent()
         
         AlertDialog.Builder(this)
             .setTitle("ℹ️ About GPS Speedometer")
             .setMessage(message)
             .setPositiveButton("Got it!", null)
+            .setNeutralButton("☕ Donate") { _, _ ->
+                val intent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse("https://buymeacoffee.com/Gwenvio"))
+                startActivity(intent)
+            }
             .show()
     }
 
@@ -228,7 +208,7 @@ class MainActivity : Activity() {
             if (checkLocationPermission()) {
                 locationManager.requestLocationUpdates(
                     LocationManager.GPS_PROVIDER,
-                    500, // 0.5 second
+                    200, // 0.2 seconds - Real-time updates like professional speedometer apps
                     0f,   // 0 meters
                     locationListener
                 )
@@ -245,10 +225,8 @@ class MainActivity : Activity() {
             val speedKmh = location.speed * 3.6f
             val speedMph = location.speed * 2.23694f
             
-            // Set target speed for smooth animation
-            targetSpeed = speedKmh
-            speedUpdateHandler.removeCallbacks(speedAnimationRunnable)
-            speedUpdateHandler.post(speedAnimationRunnable)
+            // Update speed display directly
+            gpsSpeedText.text = "%.0f".format(speedKmh)
             
             // Update GPS accuracy
             if (location.hasAccuracy()) {
@@ -284,23 +262,30 @@ class MainActivity : Activity() {
                 maxSpeedText.text = "MAX SPEED: %.0f KM/H".format(maxSpeed)
             }
             
-            // Calculate trip distance
+            // Calculate trip distance and moving time
             if (lastLocation != null) {
                 val distance = lastLocation!!.distanceTo(location) // in meters
-                // Only add distance if speed > 1 km/h (to avoid GPS drift when stationary)
+                val currentTime = System.currentTimeMillis()
+                val timeDiff = currentTime - lastUpdateTime
+                
+                // Only add distance and time if speed > 1 km/h (to avoid GPS drift when stationary)
                 if (speedKmh > 1.0f && distance < 100) { // Also filter out GPS jumps > 100m
                     totalDistance += distance
+                    movingTime += timeDiff // Only count time when moving
                     val distanceKm = totalDistance / 1000.0
                     tripDistanceText.text = "DISTANCE: %.2f KM".format(distanceKm)
                 }
+                lastUpdateTime = currentTime
+            } else {
+                lastUpdateTime = System.currentTimeMillis()
             }
             lastLocation = location
             
-            // Calculate average speed
+            // Calculate average speed based on moving time only
             totalTime = System.currentTimeMillis() - tripStartTime
-            if (totalTime > 0 && totalDistance > 0) {
-                // Average speed = total distance / total time
-                val avgSpeedMps = totalDistance / (totalTime / 1000.0) // m/s
+            if (movingTime > 0 && totalDistance > 0) {
+                // Average speed = total distance / moving time (not total time)
+                val avgSpeedMps = totalDistance / (movingTime / 1000.0) // m/s
                 val avgSpeedKmh = avgSpeedMps * 3.6 // km/h
                 avgSpeedText.text = "AVG SPEED: %.1f KM/H".format(avgSpeedKmh)
             }
@@ -335,44 +320,5 @@ class MainActivity : Activity() {
     override fun onDestroy() {
         super.onDestroy()
         locationManager.removeUpdates(locationListener)
-        speedUpdateHandler.removeCallbacks(speedAnimationRunnable)
-    }
-
-    override fun onBackPressed() {
-        StartAppAd.showAd(this)
-        super.onBackPressed()
-    }
-    
-    // Banner Ad Loading (following official demo pattern)
-    private fun loadBannerAd() {
-        BannerRequest(applicationContext)
-            .setAdFormat(BannerFormat.BANNER)
-            .load { creator, error ->
-                if (creator != null) {
-                    val adView = creator.create(applicationContext, object : BannerListener {
-                        override fun onReceiveAd(banner: View?) {
-                            Log.d("MainActivity", "Banner ad received")
-                        }
-
-                        override fun onFailedToReceiveAd(banner: View?) {
-                            Log.e("MainActivity", "Banner ad failed to load")
-                        }
-
-                        override fun onImpression(banner: View?) {
-                            Log.d("MainActivity", "Banner ad impression")
-                        }
-
-                        override fun onClick(banner: View?) {
-                            Log.d("MainActivity", "Banner ad clicked")
-                        }
-                    })
-                    
-                    // Add banner to container
-                    bannerContainer.removeAllViews()
-                    bannerContainer.addView(adView)
-                } else {
-                    Log.e("MainActivity", "Banner error: $error")
-                }
-            }
     }
 }

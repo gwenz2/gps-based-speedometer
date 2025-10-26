@@ -11,8 +11,8 @@ android {
         applicationId = "com.gwenz.speedometer"
         minSdk = 28
         targetSdk = 36
-        versionCode = 20
-        versionName = "2.0"
+        versionCode = 30
+        versionName = "3.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -35,7 +35,7 @@ android {
     }
     kotlinOptions {
         jvmTarget = "11"
-    }
+        }
 }
 
 dependencies {
@@ -43,7 +43,6 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
-    implementation("com.startapp:inapp-sdk:5.+")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

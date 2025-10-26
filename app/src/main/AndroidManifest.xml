@@ -3,11 +3,8 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-feature android:name="android.hardware.location.gps" />
-    <uses-permission android:name="android.permission.BLUETOOTH" />
-    <uses-permission android:name="android.permission.AD_ID" />
 
     <application
-        android:name=".SpeedometerApp"
         android:label="GPS Speedometer"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher"
@@ -31,10 +28,6 @@
             android:screenOrientation="portrait"
             android:configChanges="orientation|screenSize"
             android:keepScreenOn="true" />
-
-        <meta-data
-            android:name="com.startapp.sdk.APPLICATION_ID"
-            android:value="209173609" />
     </application>
 
 </manifest>

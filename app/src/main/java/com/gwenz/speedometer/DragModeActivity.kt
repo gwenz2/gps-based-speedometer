@@ -15,21 +15,13 @@ import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
-import android.widget.FrameLayout
-import android.view.View
-import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import com.startapp.sdk.adsbase.StartAppAd
-import com.startapp.sdk.ads.banner.BannerFormat
-import com.startapp.sdk.ads.banner.BannerRequest
-import com.startapp.sdk.ads.banner.BannerListener
 import kotlin.math.abs
 
 class DragModeActivity : Activity() {
 
     private lateinit var locationManager: LocationManager
-    private lateinit var bannerContainer: FrameLayout
     
     private lateinit var currentSpeedText: TextView
     private lateinit var statusText: TextView
@@ -38,13 +30,21 @@ class DragModeActivity : Activity() {
     private lateinit var timeCustomText: TextView
     private lateinit var distanceCustomText: TextView
     private lateinit var resetButton: Button
+    private lateinit var startButton: Button
     private lateinit var settingsButton: Button
     
     private var customSpeed = 80f // km/h
     private var customDistance = 400f // meters
     
+    // Countdown variables
+    private var isCountdownActive = false
+    private var countdownValue = 10
+    private val countdownHandler = android.os.Handler(android.os.Looper.getMainLooper())
+    private var countdownRunnable: Runnable? = null
+    
     // Timing variables
     private var isTimerStarted = false
+    private var isTimerReady = false
     private var startTime = 0L
     private var time0to60 = 0f
     private var time0to100 = 0f
@@ -74,21 +74,25 @@ class DragModeActivity : Activity() {
         timeCustomText = findViewById(R.id.time_custom_speed)
         distanceCustomText = findViewById(R.id.time_custom_distance)
         resetButton = findViewById(R.id.reset_button)
+        startButton = findViewById(R.id.start_button)
         settingsButton = findViewById(R.id.settings_button)
-        bannerContainer = findViewById(R.id.banner_container)
 
         loadSettings()
         updateCustomLabels()
         loadBestResults()
-        
-        // Load banner ad
-        loadBannerAd()
 
         // Back button to return to speedometer
         val backButton = findViewById<android.widget.Button>(R.id.back_to_speedometer_button)
         backButton.setOnClickListener {
             finish()
             overridePendingTransition(android.R.anim.slide_in_left, android.R.anim.slide_out_right)
+        }
+
+        // Start button - begins countdown
+        startButton.setOnClickListener {
+            if (!isCountdownActive && !isTimerStarted) {
+                startCountdown()
+            }
         }
 
         // Reset button - long press (3 seconds)
@@ -200,11 +204,45 @@ class DragModeActivity : Activity() {
         distanceCustomText.text = "${customDistance.toInt()}m: --"
     }
 
+    private fun startCountdown() {
+        isCountdownActive = true
+        countdownValue = 10
+        startButton.isEnabled = false
+        startButton.backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#666666"))
+        
+        statusText.setTextColor(android.graphics.Color.parseColor("#FFA500")) // Orange for countdown
+        
+        countdownRunnable = object : Runnable {
+            override fun run() {
+                if (countdownValue > 0) {
+                    statusText.text = "⏱️ Starting in ${countdownValue}s..."
+                    countdownValue--
+                    countdownHandler.postDelayed(this, 1000) // 1 second
+                } else {
+                    // Countdown finished
+                    isCountdownActive = false
+                    isTimerReady = true
+                    statusText.text = "✅ READY! Accelerate when ready..."
+                    statusText.setTextColor(android.graphics.Color.parseColor("#00FF00")) // Green for ready
+                    Toast.makeText(this@DragModeActivity, "GO! Timer will start when you move!", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+        countdownHandler.post(countdownRunnable!!)
+    }
+
     private fun resetTimer() {
         // Save best results before resetting
         saveBestResults()
         
+        // Stop countdown if active
+        if (isCountdownActive) {
+            countdownHandler.removeCallbacks(countdownRunnable!!)
+            isCountdownActive = false
+        }
+        
         isTimerStarted = false
+        isTimerReady = false
         startTime = 0L
         time0to60 = 0f
         time0to100 = 0f
@@ -218,7 +256,11 @@ class DragModeActivity : Activity() {
         count0to100 = 0
         countCustomSpeed = 0
         
-        statusText.text = "Ready - Waiting to start from 0 km/h"
+        // Re-enable start button
+        startButton.isEnabled = true
+        startButton.backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#00FF00"))
+        
+        statusText.text = "Ready - Press START to begin countdown"
         statusText.setTextColor(android.graphics.Color.parseColor("#FFFF00")) // Yellow for ready
         
         // Reload and display best results
@@ -285,10 +327,12 @@ class DragModeActivity : Activity() {
             • Best results in open areas
             
             ⏱️ HOW IT WORKS:
-            • Timer auto-starts when speed > 1 km/h
+            1. Press START button → 10-second countdown
+            2. Countdown ends → "READY! Accelerate when ready..."
+            3. Timer starts when you accelerate > 1 km/h
             • Tracks: 0-60, 0-100, custom speed, distance
             • Records best times automatically
-            • Status color: Yellow=Ready, Green=Running
+            • Status color: Orange=Countdown, Green=Running
             
             📊 MEASUREMENTS:
             • Time precision: 0.01 seconds
@@ -296,10 +340,10 @@ class DragModeActivity : Activity() {
             • Speed updated 10x per second
             
             💡 USAGE TIPS:
-            • Start from complete stop (0 km/h)
-            • GPS may lag 0.1-0.3 seconds (normal)
-            • Use in safe, legal locations only
-            • Long-press RESET to save & reset times
+            • Press START to begin 10s countdown
+            • Use countdown to get into position
+            • Timer captures from true 0 km/h (no GPS lag!)
+            • Long-press RESET (3s) to save & reset times
             • Tap SETTINGS to customize targets
             
             ⭐ BEST TIMES:
@@ -310,13 +354,19 @@ class DragModeActivity : Activity() {
             This is for track/closed course use only.
             Never use on public roads. Drive safely!
             
-            Version 1.4 • Made by Balajedrion
+            Version 3.0 • Made by Balajedrion
+            
+            ☕ Support: buymeacoffee.com/Gwenvio
         """.trimIndent()
         
         AlertDialog.Builder(this)
             .setTitle("ℹ️ About Drag Racing Mode")
             .setMessage(message)
             .setPositiveButton("Got it!", null)
+            .setNeutralButton("☕ Donate") { _, _ ->
+                val intent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse("https://buymeacoffee.com/Gwenvio"))
+                startActivity(intent)
+            }
             .show()
     }
 
@@ -347,7 +397,7 @@ class DragModeActivity : Activity() {
                     0f,
                     locationListener
                 )
-                statusText.text = "GPS: Searching... Start from 0 km/h"
+                statusText.text = "GPS: Searching... Press START when ready"
                 statusText.setTextColor(android.graphics.Color.parseColor("#FFA500")) // Orange for searching
             }
         } catch (e: SecurityException) {
@@ -361,9 +411,10 @@ class DragModeActivity : Activity() {
             val speedKmh = location.speed * 3.6f
             currentSpeedText.text = "%.1f".format(speedKmh)
 
-            // Start timer when speed goes above 1 km/h from 0
-            if (!isTimerStarted && speedKmh > 1f) {
+            // Start timer when speed goes above 1 km/h AFTER countdown completes
+            if (!isTimerStarted && isTimerReady && speedKmh > 1f) {
                 isTimerStarted = true
+                isTimerReady = false // Prevent restart
                 startTime = System.currentTimeMillis()
                 startLocation = location
                 totalDistance = 0f
@@ -491,38 +542,9 @@ class DragModeActivity : Activity() {
     override fun onDestroy() {
         super.onDestroy()
         locationManager.removeUpdates(locationListener)
-    }
-    
-    // Banner Ad Loading (following official demo pattern)
-    private fun loadBannerAd() {
-        BannerRequest(applicationContext)
-            .setAdFormat(BannerFormat.BANNER)
-            .load { creator, error ->
-                if (creator != null) {
-                    val adView = creator.create(applicationContext, object : BannerListener {
-                        override fun onReceiveAd(banner: View?) {
-                            Log.d("DragModeActivity", "Banner ad received")
-                        }
-
-                        override fun onFailedToReceiveAd(banner: View?) {
-                            Log.e("DragModeActivity", "Banner ad failed to load")
-                        }
-
-                        override fun onImpression(banner: View?) {
-                            Log.d("DragModeActivity", "Banner ad impression")
-                        }
-
-                        override fun onClick(banner: View?) {
-                            Log.d("DragModeActivity", "Banner ad clicked")
-                        }
-                    })
-                    
-                    // Add banner to container
-                    bannerContainer.removeAllViews()
-                    bannerContainer.addView(adView)
-                } else {
-                    Log.e("DragModeActivity", "Banner error: $error")
-                }
-            }
+        // Clean up countdown handler
+        if (countdownRunnable != null) {
+            countdownHandler.removeCallbacks(countdownRunnable!!)
+        }
     }
 }
