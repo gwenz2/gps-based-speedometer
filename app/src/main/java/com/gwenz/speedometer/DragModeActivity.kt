@@ -36,6 +36,9 @@ class DragModeActivity : Activity() {
     private var customSpeed = 80f // km/h
     private var customDistance = 400f // meters
     
+    // Current speed tracking
+    private var currentSpeed = 0f
+    
     // Countdown variables
     private var isCountdownActive = false
     private var countdownValue = 10
@@ -91,7 +94,11 @@ class DragModeActivity : Activity() {
         // Start button - begins countdown
         startButton.setOnClickListener {
             if (!isCountdownActive && !isTimerStarted) {
-                startCountdown()
+                if (currentSpeed > 0) {
+                    Toast.makeText(this, "Please come to complete stop (0 km/h) first", Toast.LENGTH_SHORT).show()
+                } else {
+                    startCountdown()
+                }
             }
         }
 
@@ -219,12 +226,15 @@ class DragModeActivity : Activity() {
                     countdownValue--
                     countdownHandler.postDelayed(this, 1000) // 1 second
                 } else {
-                    // Countdown finished
+                    // Countdown finished - START TIMER IMMEDIATELY
                     isCountdownActive = false
-                    isTimerReady = true
-                    statusText.text = "✅ READY! Accelerate when ready..."
-                    statusText.setTextColor(android.graphics.Color.parseColor("#00FF00")) // Green for ready
-                    Toast.makeText(this@DragModeActivity, "GO! Timer will start when you move!", Toast.LENGTH_SHORT).show()
+                    isTimerStarted = true
+                    startTime = System.currentTimeMillis()
+                    startLocation = null
+                    totalDistance = 0f
+                    statusText.text = "🏁 GO! Timer started!"
+                    statusText.setTextColor(android.graphics.Color.parseColor("#00FF00")) // Green for running
+                    Toast.makeText(this@DragModeActivity, "GO! GO! GO!", Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -409,22 +419,28 @@ class DragModeActivity : Activity() {
     private val locationListener = object : LocationListener {
         override fun onLocationChanged(location: Location) {
             val speedKmh = location.speed * 3.6f
+            currentSpeed = speedKmh // Track current speed
             currentSpeedText.text = "%.1f".format(speedKmh)
-
-            // Start timer when speed goes above 1 km/h AFTER countdown completes
-            if (!isTimerStarted && isTimerReady && speedKmh > 1f) {
-                isTimerStarted = true
-                isTimerReady = false // Prevent restart
-                startTime = System.currentTimeMillis()
-                startLocation = location
-                totalDistance = 0f
-                statusText.text = "⏱️ Timer started!"
-                statusText.setTextColor(android.graphics.Color.parseColor("#00FF00")) // Green for running
+            
+            // Update start button state based on speed
+            if (!isCountdownActive && !isTimerStarted) {
+                if (speedKmh > 0) {
+                    startButton.isEnabled = false
+                    startButton.backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#666666"))
+                } else {
+                    startButton.isEnabled = true
+                    startButton.backgroundTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#00FF00"))
+                }
             }
 
             // Only track if timer has started
             if (isTimerStarted) {
                 val elapsedTime = (System.currentTimeMillis() - startTime) / 1000f
+
+                // Initialize start location on first update after timer starts
+                if (startLocation == null) {
+                    startLocation = location
+                }
 
                 // Track distance
                 startLocation?.let { start ->

@@ -11,7 +11,7 @@ android {
         applicationId = "com.gwenz.speedometer"
         minSdk = 28
         targetSdk = 36
-        versionCode = 30
+        versionCode = 31
         versionName = "3.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
